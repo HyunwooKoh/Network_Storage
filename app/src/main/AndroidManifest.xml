@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    package="tv.formuler.service.gtv.networkstorage"
+    tools:ignore="ImpliedTouchscreenHardware,MissingLeanbackLauncher"
+    android:sharedUserId="android.uid.system"
+    android:versionCode="11"
+    android:versionName="1.1">
+
+
+<uses-feature
+        android:name="android.software.leanback"
+        android:required="false" />
+    <uses-feature
+        android:name="android.software.leanback"
+        android:required="false" />
+
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <application
+        android:allowBackup="true"
+        android:icon="@drawable/quick_settings_network_storage"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.MyApplication"
+        android:windowSoftInputMode="adjustNothing"
+        android:textIsSelectable="true">
+
+        <activity android:name=".MainActivity"
+            android:theme="@style/Theme.Leanback.GuidedStep">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <action android:name="tv.formuler.service.gtv.networkstorage.NETWORKSTORAGE" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <service
+            android:name=".NetworkStatusListener"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
+                <action android:name="NETWORK_STORAGE_NET_LISTENER_START"/>
+                <action android:name="aloys.intent.action.START_STORAGE_WATCHER"/>
+                <action android:name="aloys.intent.action.STOP_STORAGE_WATCHER"/>
+            </intent-filter>
+        </service>
+
+        <receiver
+            android:name=".BootCompleteReceiver"
+            android:enabled="true"
+            android:exported="false" >
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+
+    </application>
+</manifest>
