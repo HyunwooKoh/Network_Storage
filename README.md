@@ -1,4 +1,7 @@
 # Network_Storage
+## FOR PEOPEL WHO SEARCHING 'SEARCHING LOCAL STORAGE AND MOUNT IT "
+At NetworkStoragemanager.mount() this app try to mount on your device! but, you have to change it which your own API or
+use jcifs-ng library. Also, This app is made for run on Android TV, so chagne the UI class if you run on different device. thanks
 
 ## 발생했던 문제점
 
