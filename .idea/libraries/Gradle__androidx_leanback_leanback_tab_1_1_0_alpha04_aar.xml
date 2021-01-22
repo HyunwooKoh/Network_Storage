@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="Gradle: androidx.leanback:leanback-tab:1.1.0-alpha04@aar">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/transforms-2/files-2.1/f9c44d59b4426e04797a8f9094edb3f6/jetified-leanback-tab-1.1.0-alpha04/jars/classes.jar!/" />
+      <root url="file://$USER_HOME$/.gradle/caches/transforms-2/files-2.1/f9c44d59b4426e04797a8f9094edb3f6/jetified-leanback-tab-1.1.0-alpha04/res" />
+      <root url="file://$USER_HOME$/.gradle/caches/transforms-2/files-2.1/f9c44d59b4426e04797a8f9094edb3f6/jetified-leanback-tab-1.1.0-alpha04/AndroidManifest.xml" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/androidx.leanback/leanback-tab/1.1.0-alpha04/b4c31c6e06c9428464afd3372099ef3136a78e47/leanback-tab-1.1.0-alpha04-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

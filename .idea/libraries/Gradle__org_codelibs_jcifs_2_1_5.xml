@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="Gradle: org.codelibs:jcifs:2.1.5">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.codelibs/jcifs/2.1.5/900d057ebbfedc3fcc2dfd695a5e8d278ff97a0a/jcifs-2.1.5.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.codelibs/jcifs/2.1.5/ff4bee7a2201e199106f667a85efdcf3dcca2fde/jcifs-2.1.5-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.codelibs/jcifs/2.1.5/5a5219928919eee0f83ab84c020cca16aa391c3c/jcifs-2.1.5-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

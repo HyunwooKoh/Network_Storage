@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="Gradle: ./app/libs/aml_hwAn.jar">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/app/libs/aml_hwAn.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

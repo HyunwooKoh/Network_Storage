@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="Gradle: androidx.leanback:leanback-paging:1.1.0-alpha04@aar">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/transforms-2/files-2.1/af4b375d36c3874709cba1e9ca4b5f2b/jetified-leanback-paging-1.1.0-alpha04/jars/classes.jar!/" />
+      <root url="file://$USER_HOME$/.gradle/caches/transforms-2/files-2.1/af4b375d36c3874709cba1e9ca4b5f2b/jetified-leanback-paging-1.1.0-alpha04/res" />
+      <root url="file://$USER_HOME$/.gradle/caches/transforms-2/files-2.1/af4b375d36c3874709cba1e9ca4b5f2b/jetified-leanback-paging-1.1.0-alpha04/AndroidManifest.xml" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/androidx.leanback/leanback-paging/1.1.0-alpha04/d362f35c89e32795aaef78c9869b8f9f1be9d4d6/leanback-paging-1.1.0-alpha04-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>
