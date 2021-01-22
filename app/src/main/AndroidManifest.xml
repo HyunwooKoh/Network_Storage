@@ -4,8 +4,8 @@
     package="tv.formuler.service.gtv.networkstorage"
     tools:ignore="ImpliedTouchscreenHardware,MissingLeanbackLauncher"
     android:sharedUserId="android.uid.system"
-    android:versionCode="11"
-    android:versionName="1.1">
+    android:versionCode="12"
+    android:versionName="1.2">
 
 
 <uses-feature
@@ -16,6 +16,10 @@
         android:required="false" />
 
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission
+        android:name="android.permission.WRITE_SECURE_SETTINGS"
+        tools:ignore="ProtectedPermissions" />
+
 
     <application
         android:allowBackup="true"
@@ -38,14 +42,14 @@
         </activity>
 
         <service
-            android:name=".NetworkStatusListener"
+            android:name=".NetworkStorageService"
             android:enabled="true"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
                 <action android:name="NETWORK_STORAGE_NET_LISTENER_START"/>
-                <action android:name="aloys.intent.action.START_STORAGE_WATCHER"/>
-                <action android:name="aloys.intent.action.STOP_STORAGE_WATCHER"/>
+                <action android:name="aloys.intent.action.STORAGE_MOUNTED"/>
+                <action android:name="aloys.intent.action.STORAGE_BAD_REMOVAL"/>
             </intent-filter>
         </service>
 

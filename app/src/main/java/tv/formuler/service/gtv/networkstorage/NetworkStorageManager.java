@@ -1,16 +1,19 @@
 package tv.formuler.service.gtv.networkstorage;
 
 import android.content.Context;
+import android.os.RemoteException;
 import android.util.Log;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import vendor.amlogic.hardware.hwan.V1_0.IHwAnCallback;
 import vendor.amlogic.hardware.hwan.V1_0.dataPack;
-
-import android.os.RemoteException;
-
 
 public class NetworkStorageManager {
 
@@ -72,7 +75,6 @@ public class NetworkStorageManager {
         if (mStorageDbHelper != null) {
             return mStorageDbHelper.getNetStorageList();
         }
-        Log.e("harold","Db is null");
         return null;
     }
 
@@ -94,7 +96,17 @@ public class NetworkStorageManager {
         String netPath = "//" + info.getUrl();
         String localMountPath = info.getMountPath();
         String type = "cifs";
-        String option = "username=" + info.getUsername() + ",password=" + info.getPassword();
+        // 만약 Username와 password가 null이라면 everyone에게 공개되어 있다고 판단.
+        // 다음과 같은 option으로 mount시 되는 것 확인 함.
+        String option;
+        if(info.getUsername() == null) {
+            if(info.getPassword() == null)
+                option = "username=" + "everyone" + ",password=" + "everyone";
+            else
+                option = "username=" + "everyone" + ",password=" + info.getPassword();
+        }
+        else
+            option = "username=" + info.getUsername() + ",password=" + info.getPassword();
 
         if(mAnapi == null)
             mAnapi = new AnApi(mContext);
@@ -127,19 +139,38 @@ public class NetworkStorageManager {
 
     public synchronized ArrayList<String> findNetworkStorage(Context context) {
 
-        ArrayList<String> vMountedNetStorageInfos = new ArrayList<>();
-        try {
-            final File folder = new File("/mnt/cifs");
-            for (final File name : folder.listFiles()) {
-                if (name.isDirectory()) {
-                    vMountedNetStorageInfos.add(name.getName());
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
+        final ArrayList<String> vMountedNetStorageInfos = new ArrayList<>();
+
+        Callable<ArrayList<String>> task = new Callable<ArrayList<String>>() {
+            @Override
+            public ArrayList<String> call() throws Exception {
+                try {
+                    final File folder = new File("/mnt/cifs");
+                    for (final File name : folder.listFiles()) {
+                        if (name.isDirectory()) {
+                            vMountedNetStorageInfos.add(name.getName());
+                        }
+                    }
+                    return vMountedNetStorageInfos;
+                } catch (Error ex) {
+                    return null;
                 }
             }
-        } catch (Error ex) {
-            ex.printStackTrace();
-            return null;
+        };
+
+        Future<ArrayList<String>> future = executorService.submit(task);
+
+        try {
+             ArrayList<String> result = future.get(1500, TimeUnit.MILLISECONDS);
+             return result;
+        } catch (Exception e) {
+            Log.e("NetworkStorageManager","##### FindNetworkStorage Time out error #####");
+        } finally {
+            executorService.shutdown();
         }
-        return vMountedNetStorageInfos;
+
+        return null;
     }
 
     private IHwAnCallback mAnCallbackImpl = new IHwAnCallback.Stub() {

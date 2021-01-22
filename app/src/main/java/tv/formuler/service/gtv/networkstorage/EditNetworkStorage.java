@@ -2,17 +2,13 @@ package tv.formuler.service.gtv.networkstorage;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.drawable.Drawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
-import androidx.annotation.NonNull;
-import org.jetbrains.annotations.Nullable;
-import androidx.leanback.app.GuidedStepSupportFragment;
-import androidx.leanback.widget.GuidanceStylist;
-import androidx.leanback.widget.GuidedAction;
 import android.text.Html;
 import android.text.InputType;
 import android.text.Spanned;
@@ -20,6 +16,13 @@ import android.text.TextUtils;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.leanback.app.GuidedStepSupportFragment;
+import androidx.leanback.widget.GuidanceStylist;
+import androidx.leanback.widget.GuidedAction;
+
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -54,22 +57,6 @@ public class EditNetworkStorage extends GuidedStepSupportFragment {
         return new EditNetworkStorage();
     }
 
-    public boolean isMounted(NetStorageDbInfo dbInfo) {
-        if (dbInfo == null) {
-            return false;
-        }
-        final List<String> MountedNetStorageInfos = NetworkStorageManager.getInstance().findNetworkStorage(getActivity());
-
-        if (MountedNetStorageInfos != null && MountedNetStorageInfos.size() > 0) {
-            for (String mmoutStorage : MountedNetStorageInfos) {
-                if (mmoutStorage.equals(dbInfo.getName()) && dbInfo.isMounted()) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
     @Override
     public void onCreate(Bundle savedInstanceState) {
 
@@ -77,7 +64,7 @@ public class EditNetworkStorage extends GuidedStepSupportFragment {
             ava_address = getArguments().getString("address_info",null);
             if(ava_address == null) {
                 netStorageInfo = getArguments().getParcelable("storage_info");
-                isMounted = isMounted(netStorageInfo);
+                isMounted = getArguments().getBoolean("mount_info",false);
             }
         }
 
@@ -179,12 +166,12 @@ public class EditNetworkStorage extends GuidedStepSupportFragment {
                     mRequestMountStorageInfo = null;
                     showToast(getActivity(), mMountFailStr);
                 } else {
+                    SendMountBroadcast(mRequestMountStorageInfo,getActivity());
                     mClickedBtn = id;
                     String message = getString(R.string.network_storage_connect_to, name);
                     showToast(getActivity(), message);
                     mRequestMountStorageInfo.setIsMounted(1);
                     NetworkStorageManager.getInstance().updateNetStorage(mRequestMountStorageInfo);
-                    SendMountBroadcast(mRequestMountStorageInfo,getActivity());
                     getFragmentManager().popBackStack();
                 }
 
@@ -223,12 +210,13 @@ public class EditNetworkStorage extends GuidedStepSupportFragment {
                         showToast(getActivity(), mMountFailStr);
                         mRequestMountStorageInfo = null;
                     } else {
+                        SendMountBroadcast(mRequestMountStorageInfo,getActivity());
                         mClickedBtn = id;
                         String message = getString(R.string.network_storage_connect_to, name);
                         mRequestMountStorageInfo.setIsMounted(1);
                         NetworkStorageManager.getInstance().updateNetStorage(mRequestMountStorageInfo);
-                        SendMountBroadcast(mRequestMountStorageInfo,getActivity());
                         showToast(getActivity(), message);
+                        NetworkStorageService.getInstance().Find_Available_Storage(mRequestMountStorageInfo.getUrl(),true);
                         getFragmentManager().popBackStack();
                     }
 
@@ -236,10 +224,17 @@ public class EditNetworkStorage extends GuidedStepSupportFragment {
 
             } else if (id == ID_UNMOUNT_BTN) {
                 mRequestUnmountStorageInfo = NetworkStorageManager.getInstance().getNetStorage(name);
+
+                SharedPreferences.Editor editor = getContext().getSharedPreferences("USER_UNMOUNT",Context.MODE_PRIVATE).edit();
+                editor.putBoolean(name,true);
+                editor.apply();
+
                 isSuccess = NetworkStorageManager.getInstance().unmount(mRequestUnmountStorageInfo);
 
                 if (!isSuccess) {
                     mRequestUnmountStorageInfo = null;
+                    editor.remove(name);
+                    editor.apply();
                     showToast(getActivity(), getString(R.string.network_storage_unmount_fail));
                     getFragmentManager().popBackStack();
                 } else {
@@ -257,10 +252,15 @@ public class EditNetworkStorage extends GuidedStepSupportFragment {
 
                 if (isMounted) {
                     // 만약 mount가 되있는 상태라면 umnount 후 delete 진행
+                    SharedPreferences.Editor editor = getContext().getSharedPreferences("USER_UNMOUNT",Context.MODE_PRIVATE).edit();
+                    editor.putBoolean(name,true);
+                    editor.apply();
                     isSuccess = NetworkStorageManager.getInstance().unmount(mRequestUnmountStorageInfo);
 
                     if (!isSuccess) {
                         showToast(getActivity(), getString(R.string.quick_settings_network_storage_warning_unmount_fail));
+                        editor.remove(name);
+                        editor.apply();
                         return ;
                     } else {
                         SendUnMountBroadcast(mRequestUnmountStorageInfo,getActivity());
@@ -273,6 +273,7 @@ public class EditNetworkStorage extends GuidedStepSupportFragment {
                             message += " and ";
                             message += getString(R.string.quick_settings_network_storage_warning_delete_success);
                             showToast(getActivity(), message);
+                            NetworkStorageService.getInstance().Find_Available_Storage(mRequestUnmountStorageInfo.getUrl(),false);
                             getFragmentManager().popBackStack();
                         } else {
                             showToast(getActivity(), message);
@@ -486,34 +487,28 @@ public class EditNetworkStorage extends GuidedStepSupportFragment {
     public void SendMountBroadcast(NetStorageDbInfo mRequestMountStorageInfo, Context context) {
         final String mountpoint = mRequestMountStorageInfo.getMountPath();
         final String device = "//" + mRequestMountStorageInfo.getUrl();
+        final String net_storage_name = mRequestMountStorageInfo.getName();
 
         Intent intent = new Intent("aloys.intent.action.STORAGE_MOUNTED");
         intent.putExtra("mountpoint",mountpoint);
         intent.putExtra("device",device);
+        intent.putExtra("net_storage_name",net_storage_name);
         intent.putExtra("fstype","cifs");
         intent.putExtra("fssize",55555555L);
         context.sendBroadcast(intent);
-
-        Intent intent2 = new Intent("aloys.intent.action.START_STORAGE_WATCHER");
-        intent2.setPackage("tv.formuler.service.gtv.networkstorage");
-        intent2.putExtra("name", mRequestMountStorageInfo.getName());
-        context.sendBroadcast(intent2);
     }
 
     public void SendUnMountBroadcast(NetStorageDbInfo mRequestMountStorageInfo, Context context) {
         final String mountpoint = mRequestMountStorageInfo.getMountPath();
         final String device = "//" + mRequestMountStorageInfo.getUrl();
+        final String net_storage_name = mRequestMountStorageInfo.getName();
 
         Intent intent = new Intent("aloys.intent.action.STORAGE_BAD_REMOVAL");
         intent.putExtra("mountpoint", mountpoint);
         intent.putExtra("device", device);
+        intent.putExtra("net_storage_name",net_storage_name);
         intent.putExtra("fstype", "cifs");
         intent.putExtra("fssize", 55555555L);
         context.sendBroadcast(intent);
-
-        Intent intent2 = new Intent("aloys.intent.action.STOP_STORAGE_WATCHER");
-        intent2.setPackage("tv.formuler.service.gtv.networkstorage");
-        intent2.putExtra("name", mRequestMountStorageInfo.getName());
-        context.sendBroadcast(intent2);
     }
 }

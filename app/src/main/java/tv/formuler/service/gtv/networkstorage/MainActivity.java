@@ -1,12 +1,11 @@
 package tv.formuler.service.gtv.networkstorage;
 
 
+import android.os.Bundle;
+
 import androidx.annotation.Nullable;
 import androidx.fragment.app.FragmentActivity;
 import androidx.leanback.app.GuidedStepSupportFragment;
-
-import android.os.Bundle;
-
 
 public class MainActivity extends FragmentActivity {
 

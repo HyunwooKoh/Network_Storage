@@ -1,5 +1,13 @@
 package tv.formuler.service.gtv.networkstorage.search;
 
+import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.LinkAddress;
+import android.net.LinkProperties;
+import android.net.Network;
+import android.net.NetworkInfo;
+import android.util.Log;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -15,14 +23,6 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import android.content.Context;
-import android.net.ConnectivityManager;
-import android.net.LinkAddress;
-import android.net.LinkProperties;
-import android.net.Network;
-import android.net.NetworkInfo;
-import android.util.Log;
 
 public class NetworkScanner {
     private final String TAG = "NetworkScanner";
@@ -68,7 +68,10 @@ public class NetworkScanner {
         this.scanListener = scanListener;
     }
 
-    public void start(){
+    public ArrayList<serverBean> start(){
+        if(mContext == null)
+            return null;
+
         String ip = null;
         final LinkProperties linkProperties;
 
@@ -77,7 +80,7 @@ public class NetworkScanner {
 
         for (Network network : mConnectivityManager.getAllNetworks()) {
             NetworkInfo networkInfo = mConnectivityManager.getNetworkInfo(network);
-            if (networkInfo != null && networkInfo.getType() == ConnectivityManager.TYPE_ETHERNET) {
+            if (networkInfo != null && (networkInfo.getType() == ConnectivityManager.TYPE_ETHERNET || networkInfo.getType() == ConnectivityManager.TYPE_WIFI)) {
 
                 linkProperties = mConnectivityManager.getLinkProperties(network);
 
@@ -86,6 +89,12 @@ public class NetworkScanner {
                 }
                 break;
             }
+        }
+
+        if(ip == null)
+        {
+            IsScanFinished = true;
+            return null;
         }
 
         getCidr();
@@ -104,10 +113,10 @@ public class NetworkScanner {
                 + "), end=" + getIpFromLongUnsigned(network_end) + " (" + network_end
                 + "), length=" + size);
 
-        scan();
+        return scan();
     }
 
-    private void scan(){
+    private ArrayList<serverBean> scan(){
         if (network_ip <= network_end && network_ip >= network_start) {
             launch(network_start);
 
@@ -144,6 +153,8 @@ public class NetworkScanner {
             scanListener.onFinish(servers);
         }
         IsScanFinished = true;
+
+        return servers;
     }
 
     private String getHardwareAddress(String ip) {

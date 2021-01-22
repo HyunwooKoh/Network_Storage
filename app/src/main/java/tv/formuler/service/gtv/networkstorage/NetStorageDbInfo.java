@@ -102,7 +102,12 @@ public class NetStorageDbInfo implements Parcelable {
     }
 
     public String getMountPath() {
-        return (MOUNT_BASE_DIR + name);
+        String mount_path = name;
+        if(mount_path.contains("'"))
+            mount_path = mount_path.replace("'","");
+        if(name.contains("/"))
+            mount_path = mount_path.replace("/","");
+        return (MOUNT_BASE_DIR + mount_path);
     }
 
     public boolean isReconnect() {

@@ -12,7 +12,7 @@ import java.util.ArrayList;
 public class NetworkStorageDbHelper extends SQLiteOpenHelper {
     public static final String NET_STORAGE_DB_DIR = "/data/db";
     public static final String NET_STORAGE_DB_NAME = "net_storage.db";
-    public static final int NET_STORAGE_DB_VER = 1;
+    public static final int NET_STORAGE_DB_VER = 2;
     public static final String NET_STORAGE_TB = "net_storage_tb";
 
     public static final String COL_ID = "_id";
@@ -49,7 +49,9 @@ public class NetworkStorageDbHelper extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-
+        // TODO
+        // Db 버전 1에는 COL_ISMOUNTED 컬럼이 없음.
+        // DB 업그레이드 통해 추가 요함.
     }
 
     public void openDb() {

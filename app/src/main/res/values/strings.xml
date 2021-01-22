@@ -37,4 +37,9 @@
     <string name="network_storage_delete_success">Succesfully deleted</string>
     <string name="network_storage_delete_fail">Fail to delete.</string>
     <string name="network_storage_Available_Server">Available Network Storage</string>
+    <string name="error_network_storage_from_stack">Network Storage Error\nAll network storage unmounted</string>
+    <string name="reload_network_storage_from_stack">Network Storage Reload\nAll network storage mounted</string>
+    <string name="error_network_storage_from_Host">Network Storage %s Host Disconnected\nstorage unmounted</string>
+    <string name="network_storage_boot_complete_mounted">Network Storage Mounted.</string>
+    <string name="network_storage_network_status_change">Network Status Changed.\nAll network storage unmounted</string>
 </resources>

@@ -1,22 +1,26 @@
 package tv.formuler.service.gtv.networkstorage;
 
+import android.content.BroadcastReceiver;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.graphics.drawable.Drawable;
-import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
-import org.jetbrains.annotations.Nullable;
 import androidx.leanback.app.GuidedStepSupportFragment;
 import androidx.leanback.widget.GuidanceStylist;
 import androidx.leanback.widget.GuidedAction;
 
-import java.util.ArrayList;
-import java.util.List;
+import org.jetbrains.annotations.Nullable;
 
-import tv.formuler.service.gtv.networkstorage.search.FindSamba;
+import java.util.ArrayList;
 
 
 public class NetworkStorageDialog extends GuidedStepSupportFragment {
@@ -27,10 +31,67 @@ public class NetworkStorageDialog extends GuidedStepSupportFragment {
 
     private static ArrayList<NetStorageDbInfo> mNetStorageDbInfoList;
     private static ArrayList<String> connectible_Server;
-    private List<GuidedAction> actions; // [ADD] aloys harold - for use in both Task
+    private ArrayList<GuidedAction> actions; // [ADD] aloys harold - for use in both Task
+    private static ArrayList<String> Mounted_List;
+
+    public NetworkStorageService mService;
+    private UI_Update_Receiver mUI_Update_Receiver;
+
+    private boolean bound = false;
+    private boolean UI_Update = false;
+    private boolean Show_Avail = true;
 
     public static NetworkStorageDialog newInstance() {
         return new NetworkStorageDialog();
+    }
+
+    private ServiceConnection mConnection = new ServiceConnection() {
+        public void onServiceConnected(ComponentName className, IBinder service) {
+            NetworkStorageService.ServiceBinder binder = (NetworkStorageService.ServiceBinder) service;
+            mService = binder.getService();
+            if(mService != null) {
+                bound = true;
+                Update_Mount_List();
+                mService.Find_Available_Storage("aloys.init.availablestorage",false);
+            }
+        }
+
+        public void onServiceDisconnected(ComponentName className) {
+            mService = null;
+            bound = false;
+        }
+    };
+
+    private class UI_Update_Receiver extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if(intent.getAction().equals("aloys.intent.action.networkstorage_ui_update")) {
+                if(mService != null && bound) {
+                    UI_Update = intent.getBooleanExtra("UI_Update",false);
+                    Show_Avail = intent.getBooleanExtra("Show_Avail",true);
+                    Update_Mount_List();
+                    if(UI_Update && Show_Avail)
+                        mService.Find_Available_Storage("aloys.init.availablestorage",false);
+                }
+            }
+            else if(intent.getAction().equals("aloys.intent.action.networkstorage_ui_update_avaServer")) {
+                connectible_Server = intent.getStringArrayListExtra("available_server");
+                refreshActions();
+            }
+        }
+    }
+
+    private void register() {
+        mUI_Update_Receiver = new UI_Update_Receiver();
+        IntentFilter filter = new IntentFilter();
+        filter.addAction("aloys.intent.action.networkstorage_ui_update");
+        filter.addAction("aloys.intent.action.networkstorage_ui_update_avaServer");
+        getActivity().registerReceiver(mUI_Update_Receiver, filter);
+    }
+
+    private void unregister() {
+        getActivity().unregisterReceiver(mUI_Update_Receiver);
     }
 
     public  void updateNetStorageDbInfoList() {
@@ -42,6 +103,8 @@ public class NetworkStorageDialog extends GuidedStepSupportFragment {
         super.onCreate(savedInstanceState);
         NetworkStorageManager.getInstance().initialize(getActivity());
         updateNetStorageDbInfoList();
+        actions = new ArrayList<GuidedAction>();
+        register();
     }
 
     @NonNull
@@ -84,6 +147,7 @@ public class NetworkStorageDialog extends GuidedStepSupportFragment {
             EditNetworkStorage fragment = new EditNetworkStorage();
             Bundle bundle = new Bundle();
             bundle.putParcelable("storage_info", mNetStorageDbInfoList.get(id));
+            bundle.putBoolean("mount_info", IsMounted(mNetStorageDbInfoList.get(id)));
             fragment.setArguments(bundle);
             GuidedStepSupportFragment.add(getFragmentManager(), fragment, android.R.id.content);
         }
@@ -102,7 +166,8 @@ public class NetworkStorageDialog extends GuidedStepSupportFragment {
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        refreshActions();
+        Intent service = new Intent(getContext(), NetworkStorageService.class);
+        getActivity().bindService(service, mConnection, Context.BIND_AUTO_CREATE);
     }
 
     @Override
@@ -112,6 +177,9 @@ public class NetworkStorageDialog extends GuidedStepSupportFragment {
 
     @Override
     public void onResume() {
+        if(bound) {
+            Update_Mount_List();
+        }
         super.onResume();
     }
 
@@ -128,18 +196,46 @@ public class NetworkStorageDialog extends GuidedStepSupportFragment {
     @Override
     public void onDestroy() {
         super.onDestroy();
+        if(bound) {
+            getActivity().unbindService(mConnection);
+            bound = false;
+        }
+
+        unregister();
+    }
+
+    private void Update_Mount_List() {
+
+        if(mService != null && bound) {
+            Mounted_List = mService.Get_Mounted_List();
+        }
+        else {
+            Mounted_List = null;
+        }
+
+        refreshActions();
+    }
+
+    private boolean IsMounted(NetStorageDbInfo info) {
+
+        if(Mounted_List != null && Mounted_List.size() > 0) {
+            return Mounted_List.contains(info.getName());
+        }
+
+        return false;
     }
 
     // Add Available Network Storage, Inserted Network Storage and Adding Server action
     private void refreshActions() {
-        actions = new ArrayList<>(); // [ADD] aloys harold - initialize actions
+        actions.clear(); // [ADD] aloys harold - initialize actions
         int index = 0;
 
         // Network Storage list
         updateNetStorageDbInfoList(); // update List
         if (mNetStorageDbInfoList != null && mNetStorageDbInfoList.size() > 0) {
             for (NetStorageDbInfo info : mNetStorageDbInfoList) {
-                Drawable drawable = getResources().getDrawable(R.drawable.quick_settings_network_storage, null);
+                Drawable drawable = IsMounted(info) ?
+                        getResources().getDrawable(R.drawable.ic_mounted, null) : getResources().getDrawable(R.drawable.ic_unmounted, null);
 
                 GuidedAction itemAction = new GuidedAction.Builder(getActivity())
                         .id(index++)
@@ -148,6 +244,9 @@ public class NetworkStorageDialog extends GuidedStepSupportFragment {
                         .icon(drawable)
                         .build();
                 actions.add(itemAction);
+
+                if(UI_Update)
+                    notifyActionChanged(index-1);
             }
         }
 
@@ -158,17 +257,34 @@ public class NetworkStorageDialog extends GuidedStepSupportFragment {
                 .build();
         actions.add(action_add_server);
 
+        if(Show_Avail) {
+            if(connectible_Server != null && connectible_Server.size() > 0) {
+                int count = 0;
+
+                for (String address : connectible_Server) {
+                    GuidedAction itemAction = new GuidedAction.Builder(getActivity())
+                            .id(ID_AVAILABLE_SERVER + count++)
+                            .title("Available NetworkStorage")
+                            .description(address)
+                            .build();
+                    actions.add(itemAction);
+                }
+            }
+        }
+
         setActions(actions);
 
-        refreshAvailable_server find_server = new refreshAvailable_server();
-        find_server.execute();
-
+        //find_server = new refreshAvailable_server();
+        //find_server.execute();
     }
 
-    // [ADD] aloys harold - for better performance [
+    /* [ADD] aloys harold - for better performance [
     public class refreshAvailable_server extends AsyncTask<Void,String,Void> {
         private static final String network_storage_Available_Server = "Available NetworkStorage";
         private ArrayList<String> AvailableServer;
+
+        private Thread Find_Thread;
+        private boolean Find_Thread_Running;
         public int count;
 
         @Override
@@ -177,8 +293,22 @@ public class NetworkStorageDialog extends GuidedStepSupportFragment {
             AvailableServer = null;
             connectible_Server = new ArrayList<String>();
 
-            AvailableServer = FindSamba.newInstance().start(getActivity());
+            Find_Thread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    Find_Thread_Running = true;
+                    AvailableServer = FindSamba.newInstance().start(getContext());
+                }
+            });
 
+            Find_Thread.start();
+            try {
+                Find_Thread.join();
+            } catch (InterruptedException e) {
+                //e.printStackTrace();
+            }
+
+            Find_Thread_Running = false;
             if(AvailableServer != null && AvailableServer.size() > 0 ) {
                 count = 0;
                 for (String address : AvailableServer) {
@@ -208,6 +338,9 @@ public class NetworkStorageDialog extends GuidedStepSupportFragment {
         @Override
         protected void onPostExecute(Void voids) {
             super.onPostExecute(voids);
+
+            if(UI_Update)
+                UI_Update = false;
         }
 
         @Override
@@ -224,8 +357,17 @@ public class NetworkStorageDialog extends GuidedStepSupportFragment {
 
         @Override
         protected void onCancelled() {
+
+            if(Find_Thread_Running) {
+                Find_Thread.interrupt();
+            }
+
+            if(UI_Update) {
+                UI_Update = false;
+            }
+
             super.onCancelled();
         }
     }
-    // ]
+    */
 }
